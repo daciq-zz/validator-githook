@@ -1,0 +1,66 @@
+#!/bin/bash
+
+STAGED_JS=$(git diff --cached --name-only --diff-filter=ACM | grep -E ".js(x|(-next)){0,1}$");
+STAGED_SASS=$(git diff --cached --name-only --diff-filter=ACM | grep -E ".((sa)|(sc)|c)ss$");
+ESLINT=$(which eslint);
+SASSLINT=$(which sass-lint);
+#GITROOTDIR=$(git rev-parse --show-toplevel);
+
+echo $ESLINT;
+
+if [ "$STAGED_JS" = "" ] || [ "$STAGED_SASS" = "" ];
+then
+  exit 0
+fi
+
+if [ ! -x "$ESLINT" ];
+then
+    printf "\033[41mPlease install ESlint\033[0m (npm i -g eslint)"
+    exit 1
+fi
+
+if [ ! -x "$SASSLINT" ];
+then
+    printf "\033[41mPlease install Sass Lint\033[0m (npm install -g sass-lint)"
+    exit 1
+fi
+
+VALIDJS=true
+
+printf "\nValidating JavaScript files:\n"
+
+for FILEJS in $STAGED_JS;
+do
+    "$ESLINT" "$FILEJS"
+
+    if [[ "$?" == 0 ]]; then
+        printf "\t\033[32mESLint Passed: $FILEJS\033[0m\n"
+    else
+        printf "\t\033[41mESLint Failed: $FILEJS\033[0m\n"
+        VALIDJS=false
+    fi
+done
+
+if [ ! $VALIDJS ]; then
+  printf "\033[41mCOMMIT FAILED:\033[0m Please fix the ESLint errors and try again.\n"
+  exit 1
+else
+  printf "\033[42mCOMMIT SUCCEEDED\033[0m\n"
+fi
+
+VALIDSASS=true
+
+printf "\nValidating SASS files:\n"
+
+for FILESASS in $STAGED_SASS;
+do
+    "$ESLINT" "$FILESASS"
+
+    if [[ "$?" == 0 ]]; then
+        printf "\t\033[32mESLint Passed: $FILESASS\033[0m"
+    else
+        printf "\t\033[41mESLint Failed: $FILESASS\033[0m"
+        VALIDSASS=false
+    fi
+done
+
